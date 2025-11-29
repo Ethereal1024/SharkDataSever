@@ -22,7 +22,12 @@ class UDPVideoStreamer {
         this.frameNumber = 0;
         this.isStreaming = false;
         this.maxPacketSize = 1400; // UDP 最大包大小（减去8字节头部后的有效载荷）
-    this.lastSendAt = 0;
+        this.lastSendAt = 0;
+        
+        // 视频列表和当前索引
+        this.videoFiles = [];
+        this.currentVideoIndex = 0;
+        this.currentFrameTimer = null;
     }
 
     async start() {
@@ -36,31 +41,74 @@ class UDPVideoStreamer {
             // 发送端只需向目标地址发送数据即可，操作系统会分配临时源端口。
             console.log(`✅ UDP 视频流服务就绪（发送目标: ${this.host}:${this.port}）`);
             this.isStreaming = true;
+            
+            // 初始化视频文件列表
+            this.initVideoFileList();
+            
+            // 开始播放第一个视频
             this.streamVideo();
             resolve();
         });
     }
 
-    async streamVideo() {
+    // 初始化视频文件列表
+    initVideoFileList() {
         const videoDir = path.join(__dirname, '..', 'VideoSource');
         
-        // 查找视频文件
+        // 检查文件夹是否存在
         if (!fs.existsSync(videoDir)) {
             console.error('❌ VideoSource 文件夹不存在');
+            this.videoFiles = [];
             return;
         }
 
-        const files = fs.readdirSync(videoDir).filter(file => 
-            file.endsWith('.mp4') || file.endsWith('.avi') || file.endsWith('.mov')
-        );
+        // 扫描所有支持的视频文件
+        const allFiles = fs.readdirSync(videoDir);
+        this.videoFiles = allFiles.filter(file => {
+            const ext = path.extname(file).toLowerCase();
+            return ['.mp4', '.avi', '.mov', '.mkv', '.flv', '.wmv'].includes(ext);
+        }).map(file => path.join(videoDir, file));
 
-        if (files.length === 0) {
+        if (this.videoFiles.length === 0) {
             console.error('❌ VideoSource 文件夹中没有找到视频文件');
+            console.warn('⚠️  支持的视频格式: .mp4, .avi, .mov, .mkv, .flv, .wmv');
+        } else {
+            console.log(`📹 找到 ${this.videoFiles.length} 个视频文件:`);
+            this.videoFiles.forEach((file, index) => {
+                console.log(`   ${index + 1}. ${path.basename(file)}`);
+            });
+        }
+    }
+
+    async streamVideo() {
+        // 检查视频文件列表
+        if (this.videoFiles.length === 0) {
+            console.error('❌ 没有可播放的视频文件');
+            // 5秒后重新扫描
+            setTimeout(() => {
+                this.initVideoFileList();
+                if (this.videoFiles.length > 0) {
+                    this.streamVideo();
+                }
+            }, 5000);
             return;
         }
 
-        const videoFile = path.join(videoDir, files[0]);
-        console.log(`📹 正在处理视频文件: ${files[0]}`);
+        // 获取当前要播放的视频
+        const videoFile = this.videoFiles[this.currentVideoIndex];
+        const videoName = path.basename(videoFile);
+        
+        console.log('');
+        console.log('═'.repeat(60));
+        console.log(`📹 正在播放视频 [${this.currentVideoIndex + 1}/${this.videoFiles.length}]: ${videoName}`);
+        console.log('═'.repeat(60));
+
+        // 检查文件是否存在
+        if (!fs.existsSync(videoFile)) {
+            console.error(`❌ 视频文件不存在: ${videoFile}`);
+            this.playNextVideo();
+            return;
+        }
 
         // 获取视频帧率 (FPS)，用于按帧发送
         let fps = 25; // 默认值
@@ -102,20 +150,24 @@ class UDPVideoStreamer {
                 '-an'                // 不处理音频
             ])
             .on('start', (cmd) => {
-                console.log('🎬 FFmpeg 命令:', cmd);
+                console.log(`🎬 FFmpeg 开始转码 (HEVC)`);
+                console.log(`   帧率: ${fps.toFixed(2)} fps, 间隔: ${frameIntervalMs} ms`);
             })
             .on('error', (err) => {
                 console.error('❌ FFmpeg 错误:', err.message);
                 // 清理定时器
-                try { clearInterval(frameTimer); } catch (e) {}
-                // 5秒后重试
-                setTimeout(() => this.streamVideo(), 5000);
+                if (this.currentFrameTimer) {
+                    clearInterval(this.currentFrameTimer);
+                    this.currentFrameTimer = null;
+                }
+                // 5秒后播放下一个视频
+                console.log('⏭️  5秒后播放下一个视频...');
+                setTimeout(() => this.playNextVideo(), 5000);
             })
             .on('end', () => {
-                console.log('🔄 视频处理完成，重新开始循环...');
-                this.frameNumber = 0;
-                // 重新开始循环
-                setTimeout(() => this.streamVideo(), 1000);
+                console.log(`✅ 视频播放完成: ${videoName}`);
+                // 播放下一个视频
+                this.playNextVideo();
             });
 
         // 使用流式处理
@@ -126,7 +178,7 @@ class UDPVideoStreamer {
         const maxBufferedBytes = this.maxPacketSize * 500; // 约 700kB
         const maxBufferedMs = frameIntervalMs * 4; // 超过此时间窗口则丢弃并重置
 
-        const frameTimer = setInterval(() => {
+        this.currentFrameTimer = setInterval(() => {
             if (!this.isStreaming) return;
             const now = Date.now();
             // 如果没有数据，则跳过
@@ -160,8 +212,41 @@ class UDPVideoStreamer {
                 pendingFrameBuf = Buffer.alloc(0);
             }
             // 清理定时器
-            clearInterval(frameTimer);
+            if (this.currentFrameTimer) {
+                clearInterval(this.currentFrameTimer);
+                this.currentFrameTimer = null;
+            }
         });
+    }
+
+    // 播放下一个视频
+    playNextVideo() {
+        // 清理当前定时器
+        if (this.currentFrameTimer) {
+            clearInterval(this.currentFrameTimer);
+            this.currentFrameTimer = null;
+        }
+
+        // 切换到下一个视频
+        this.currentVideoIndex++;
+        
+        // 如果播放完所有视频，从头开始
+        if (this.currentVideoIndex >= this.videoFiles.length) {
+            this.currentVideoIndex = 0;
+            console.log('');
+            console.log('🔄 所有视频播放完成，重新开始循环播放...');
+            console.log('');
+        }
+
+        // 重置帧计数器
+        this.frameNumber = 0;
+
+        // 延迟1秒后播放下一个视频
+        setTimeout(() => {
+            if (this.isStreaming) {
+                this.streamVideo();
+            }
+        }, 1000);
     }
 
     sendFrame(frameData) {
@@ -202,6 +287,14 @@ class UDPVideoStreamer {
 
     stop() {
         this.isStreaming = false;
+        
+        // 清理定时器
+        if (this.currentFrameTimer) {
+            clearInterval(this.currentFrameTimer);
+            this.currentFrameTimer = null;
+        }
+        
+        // 关闭socket
         if (this.socket) {
             this.socket.close();
             console.log('⏹️  UDP 视频流服务已停止');
