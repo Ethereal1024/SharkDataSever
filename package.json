@@ -1,0 +1,34 @@
+{
+  "name": "shark-data-server",
+  "version": "1.0.0",
+  "description": "UDP视频流和MQTT数据发送模拟服务器",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test:mqtt": "node test-mqtt-client.js",
+    "test:udp": "node test-udp-client.js",
+    "mqtt": "node mqtt-server.js",
+    "proto": "pbjs -t static-module -w commonjs -o proto/messages.js proto/messages.proto && pbts -o proto/messages.d.ts proto/messages.js"
+  },
+  "keywords": [
+    "udp",
+    "mqtt",
+    "video-stream",
+    "protobuf",
+    "hevc",
+    "robomaster"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "aedes": "^0.50.0",
+    "fluent-ffmpeg": "^2.1.3",
+    "mqtt": "^5.3.5",
+    "protobufjs": "^7.2.6",
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "@ffprobe-installer/ffprobe": "^1.4.1"
+  },
+  "devDependencies": {
+    "protobufjs-cli": "^1.1.2"
+  }
+}
