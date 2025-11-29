@@ -184,7 +184,7 @@ node js/mqtt-server-visual.js
 - ✅ 循环发送 HEVC (H.265) 格式视频流
 - ✅ 支持分片传输（每帧多个 UDP 包）
 - ✅ 包含帧序号、分片序号、总字节数
-- ✅ 自动读取 `VideoSource/shark.h265` 文件
+- ✅ 自动读取 `VideoSource`中的文件
 
 **启动方式：**
 ```bash
@@ -299,9 +299,9 @@ udpSocket.on('message', (msg, rinfo) => {
 ### 视频格式
 
 - **编码格式**: HEVC (H.265)
-- **文件扩展名**: `.h265` 或 `.hevc`
-- **默认视频**: `VideoSource/shark.h265`
-- **发送频率**: 约 30 FPS（可调整）
+- **文件扩展名**: 支持主流格式自动识别并转码HEVC
+- **默认视频**: `VideoSource中的视频`
+- **发送频率**: 自适应视频帧率发送
 
 ---
 
@@ -552,7 +552,7 @@ runner.bat  # 选择 "4. 启动双服务模式"
 
 **A:** 检查以下几点：
 
-1. **视频文件是否存在**：确认 `VideoSource/shark.h265` 文件存在
+1. **视频文件是否存在**：确认 `VideoSource` 文件夹下有视频存在
 2. **端口是否被占用**：
    ```bash
    # Windows
@@ -603,13 +603,9 @@ runner.bat  # 选择 "4. 启动双服务模式"
 
 **A:** 
 
-1. 准备 HEVC (H.265) 格式的视频文件
+1. 准备主流格式的视频文件
 2. 将文件放入 `VideoSource/` 目录
-3. 修改 `js/udp-video-streamer.js` 中的文件路径：
-   ```javascript
-   const videoPath = path.join(__dirname, '..', 'VideoSource', 'your-video.h265');
-   ```
-4. 重启 UDP 服务
+3. 重启 UDP 服务
 
 ---
 
