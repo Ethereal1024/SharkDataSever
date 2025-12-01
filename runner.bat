@@ -46,7 +46,8 @@ echo [2/3] 检查项目依赖...
 if not exist "node_modules\" (
     echo [安装] 首次运行，正在安装依赖...
     echo.
-    call npm install
+    call npm install -g cnpm --registry=https://registry.npmmirror.com
+    call cnpm install
     if %errorlevel% neq 0 (
         echo.
         echo [错误] 依赖安装失败！
