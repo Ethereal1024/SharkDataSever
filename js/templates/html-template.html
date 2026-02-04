@@ -19,20 +19,44 @@
             <div class="panel">
                 <div class="panel-header">
                     📥 上行消息（客户端 → 服务器）
-                    <span class="badge badge-up" id="uplinkCount">0</span>
+                    <div class="panel-header-controls">
+                        <span class="badge badge-up" id="uplinkCount">0</span>
+                        <select class="message-selector" id="uplinkMessageSelector" onchange="selectUplinkMessage(this.value)">
+                            <option value="">选择消息类型...</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="panel-body" id="uplinkMessages">
-                    <p style="color: #999; text-align: center; padding: 20px;">加载中...</p>
+                <div class="panel-body" id="uplinkPanelBody">
+                    <div class="no-message-selected" id="uplinkNoMessage">
+                        <div class="no-message-icon">📭</div>
+                        <div class="no-message-text">请从右上角选择消息类型</div>
+                        <div class="no-message-hint">选择后，将显示该消息的详细字段信息</div>
+                    </div>
+                    <div class="message-detail-view" id="uplinkMessageDetail" style="display: none;">
+                        <!-- 上行消息详情将通过JavaScript动态生成 -->
+                    </div>
                 </div>
             </div>
             
             <div class="panel">
                 <div class="panel-header">
                     📤 下行消息（服务器 → 客户端）
-                    <span class="badge badge-down" id="downlinkCount">0</span>
+                    <div class="panel-header-controls">
+                        <span class="badge badge-down" id="downlinkCount">0</span>
+                        <select class="message-selector" id="downlinkMessageSelector" onchange="selectDownlinkMessage(this.value)">
+                            <option value="">选择消息类型...</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="panel-body" id="downlinkMessages">
-                    <p style="color: #999; text-align: center; padding: 20px;">加载中...</p>
+                <div class="panel-body" id="downlinkPanelBody">
+                    <div class="no-message-selected" id="downlinkNoMessage">
+                        <div class="no-message-icon">📭</div>
+                        <div class="no-message-text">请从右上角选择消息类型</div>
+                        <div class="no-message-hint">选择后，将显示该消息的详细字段信息</div>
+                    </div>
+                    <div class="message-detail-view" id="downlinkMessageDetail" style="display: none;">
+                        <!-- 下行消息详情将通过JavaScript动态生成 -->
+                    </div>
                 </div>
             </div>
         </div>

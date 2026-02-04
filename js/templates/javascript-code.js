@@ -1,193 +1,388 @@
 let messagesData = null;
+let selectedMessages = {
+    uplink: null,
+    downlink: null
+};
         
 async function loadMessages() {
     try {
         const response = await fetch('/api/messages');
         messagesData = await response.json();
-        renderUplinkMessages();
-        renderDownlinkMessages();
+        populateMessageSelectors();
         populateManualSelect();
+        
+        // 更新消息计数
+        document.getElementById('uplinkCount').textContent = messagesData.clientMessages.length;
+        document.getElementById('downlinkCount').textContent = messagesData.serverMessages.length;
+        
+        // 如果有消息，默认选择第一个
+        if (messagesData.clientMessages.length > 0) {
+            selectUplinkMessage(messagesData.clientMessages[0].name);
+        }
+        if (messagesData.serverMessages.length > 0) {
+            selectDownlinkMessage(messagesData.serverMessages[0].name);
+        }
     } catch (error) {
         console.error('加载消息定义失败:', error);
     }
 }
 
-function renderUplinkMessages() {
-    const container = document.getElementById('uplinkMessages');
-    const count = document.getElementById('uplinkCount');
+function populateMessageSelectors() {
+    const uplinkSelector = document.getElementById('uplinkMessageSelector');
+    const downlinkSelector = document.getElementById('downlinkMessageSelector');
     
-    if (!messagesData || messagesData.clientMessages.length === 0) {
-        container.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">暂无上行消息</p>';
-        count.textContent = '0';
-        return;
-    }
+    // 清空现有选项（保留第一个提示选项）
+    while (uplinkSelector.options.length > 1) uplinkSelector.remove(1);
+    while (downlinkSelector.options.length > 1) downlinkSelector.remove(1);
     
-    count.textContent = messagesData.clientMessages.length;
-
+    if (!messagesData) return;
+    
+    // 添加上行消息选项
     messagesData.clientMessages.forEach(msg => {
-        const meta = msg.metadata;
-        const item = document.createElement('div');
-        item.className = 'message-item';
-        item.setAttribute('onclick', 'toggleMessage(this)');
-
-        const nameEl = document.createElement('div');
-        nameEl.className = 'message-name';
-        nameEl.textContent = msg.name;
-
-        const descEl = document.createElement('div');
-        descEl.className = 'message-desc';
-        descEl.textContent = meta.displayName || meta.description || '无描述';
-
-        const fieldList = document.createElement('div');
-        fieldList.className = 'field-list';
-
-        Object.entries(meta.fields).forEach(([fieldName, field]) => {
-            const fieldItem = document.createElement('div');
-            fieldItem.className = 'field-item';
-
-            const left = document.createElement('div');
-            left.className = 'field-left';
-            const fn = document.createElement('span'); fn.className = 'field-name'; fn.textContent = fieldName;
-            const ft = document.createElement('span'); ft.className = 'field-type'; ft.textContent = '(' + (field.repeated ? 'repeated ' : '') + field.type + ')';
-            const fc = document.createElement('div'); fc.className = 'field-comment'; fc.textContent = field.description || field.comment || '无说明';
-            left.appendChild(fn); left.appendChild(ft); left.appendChild(fc);
-
-            const right = document.createElement('div');
-            right.className = 'field-right received';
-            right.id = 'value-' + msg.name + '-' + fieldName;
-            const empty = document.createElement('div'); empty.className = 'field-value-empty'; empty.textContent = '暂无数据';
-            right.appendChild(empty);
-
-            fieldItem.appendChild(left);
-            fieldItem.appendChild(right);
-            fieldList.appendChild(fieldItem);
-        });
-
-        item.appendChild(nameEl);
-        item.appendChild(descEl);
-        item.appendChild(fieldList);
-        container.appendChild(item);
+        const option = document.createElement('option');
+        option.value = msg.name;
+        option.textContent = msg.name + (messagesData.messageDisplayNames?.[msg.name] ? ` (${messagesData.messageDisplayNames[msg.name]})` : '');
+        uplinkSelector.appendChild(option);
+    });
+    
+    // 添加下行消息选项
+    messagesData.serverMessages.forEach(msg => {
+        const option = document.createElement('option');
+        option.value = msg.name;
+        option.textContent = msg.name + (messagesData.messageDisplayNames?.[msg.name] ? ` (${messagesData.messageDisplayNames[msg.name]})` : '');
+        downlinkSelector.appendChild(option);
     });
 }
 
-function renderDownlinkMessages() {
-    const container = document.getElementById('downlinkMessages');
-    const count = document.getElementById('downlinkCount');
-
-    container.innerHTML = '';
-    if (!messagesData || messagesData.serverMessages.length === 0) {
-        container.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">暂无下行消息</p>';
-        count.textContent = '0';
+function selectUplinkMessage(messageName) {
+    if (!messageName) {
+        showNoMessage('uplink');
         return;
     }
-
-    count.textContent = messagesData.serverMessages.length;
-
-    messagesData.serverMessages.forEach(msg => {
-        const meta = msg.metadata;
-        const item = document.createElement('div');
-        item.className = 'message-item';
-        item.setAttribute('onclick', 'toggleMessage(this)');
-
-        const nameEl = document.createElement('div');
-        nameEl.className = 'message-name';
-        nameEl.textContent = msg.name;
-
-        const descEl = document.createElement('div');
-        descEl.className = 'message-desc';
-        descEl.textContent = messagesData.messageDisplayNames?.[msg.name] || meta.displayName || meta.description || '无描述';
-
-        const fieldList = document.createElement('div');
-        fieldList.className = 'field-list';
-
-        Object.entries(meta.fields).forEach(([fieldName, field]) => {
-            const fieldItem = document.createElement('div');
-            fieldItem.className = 'field-item';
-
-            const left = document.createElement('div');
-            left.className = 'field-left';
-            const fn = document.createElement('span');
-            fn.className = 'field-name';
-            fn.textContent = fieldName;
-            const ft = document.createElement('span');
-            ft.className = 'field-type';
-            ft.textContent = '(' + (field.repeated ? 'repeated ' : '') + field.type + ')';
-            const fc = document.createElement('div');
-            fc.className = 'field-comment';
-            fc.textContent = field.description || field.comment || '无说明';
-            left.appendChild(fn);
-            left.appendChild(ft);
-            left.appendChild(fc);
-
-            const inputWrapper = document.createElement('div');
-            inputWrapper.className = 'field-right';
-            const inputHtml = generateFieldInput(msg.name, fieldName, field);
-            inputWrapper.innerHTML = inputHtml;
-
-            fieldItem.appendChild(left);
-            fieldItem.appendChild(inputWrapper);
-            fieldList.appendChild(fieldItem);
-        });
-
-        const opArea = document.createElement('div');
-        opArea.style.display = 'flex';
-        opArea.style.gap = '10px';
-        opArea.style.alignItems = 'center';
-        opArea.style.marginTop = '10px';
-
-        const sendBtn = document.createElement('button');
-        sendBtn.className = 'send-message-btn';
-        sendBtn.textContent = '📤 发送此消息';
-        sendBtn.onclick = (e) => {
-            e.stopPropagation();
-            sendDownlinkMessage(msg.name);
-        };
-
-        const freqLabel = document.createElement('label');
-        freqLabel.className = 'form-label';
-        freqLabel.textContent = '频率(Hz)';
-
-        const freqInput = document.createElement('input');
-        freqInput.type = 'number';
-        freqInput.className = 'form-input';
-        freqInput.id = 'autoFreq-' + msg.name;
-        freqInput.value = messagesData.messageDefaultFrequencies?.[msg.name] || 1;
-        freqInput.min = 0.1;
-        freqInput.step = 0.1;
-        freqInput.style.width = '100px';
-
-        const checkLabel = document.createElement('label');
-        checkLabel.style.display = 'flex';
-        checkLabel.style.gap = '6px';
-        checkLabel.style.alignItems = 'center';
-        checkLabel.style.fontSize = '12px';
-        checkLabel.style.color = '#e2e8f0';
-
-        const checkBox = document.createElement('input');
-        checkBox.type = 'checkbox';
-        checkBox.id = 'autoEnable-' + msg.name;
-        checkBox.onclick = (e) => {
-            e.stopPropagation();
-            toggleAutoPublish(msg.name);
-        };
-
-        checkLabel.appendChild(checkBox);
-        checkLabel.appendChild(document.createTextNode('自动发送'));
-
-        opArea.appendChild(sendBtn);
-        opArea.appendChild(freqLabel);
-        opArea.appendChild(freqInput);
-        opArea.appendChild(checkLabel);
-
-        item.appendChild(nameEl);
-        item.appendChild(descEl);
-        item.appendChild(fieldList);
-        item.appendChild(opArea);
-        container.appendChild(item);
-    });
+    
+    const msg = messagesData.clientMessages.find(m => m.name === messageName);
+    if (!msg) return;
+    
+    selectedMessages.uplink = messageName;
+    document.getElementById('uplinkMessageSelector').value = messageName;
+    renderUplinkMessageDetail(msg);
 }
 
-function generateFieldInput(messageName, fieldName, fieldMeta) {
+function selectDownlinkMessage(messageName) {
+    if (!messageName) {
+        showNoMessage('downlink');
+        return;
+    }
+    
+    const msg = messagesData.serverMessages.find(m => m.name === messageName);
+    if (!msg) return;
+    
+    selectedMessages.downlink = messageName;
+    document.getElementById('downlinkMessageSelector').value = messageName;
+    renderDownlinkMessageDetail(msg);
+}
+
+function showNoMessage(type) {
+    const noMessageEl = document.getElementById(`${type}NoMessage`);
+    const detailEl = document.getElementById(`${type}MessageDetail`);
+    
+    noMessageEl.style.display = 'flex';
+    detailEl.style.display = 'none';
+}
+
+function showMessageDetail(type) {
+    const noMessageEl = document.getElementById(`${type}NoMessage`);
+    const detailEl = document.getElementById(`${type}MessageDetail`);
+    
+    noMessageEl.style.display = 'none';
+    detailEl.style.display = 'block';
+}
+
+function renderUplinkMessageDetail(msg) {
+    const container = document.getElementById('uplinkMessageDetail');
+    const meta = msg.metadata;
+    
+    container.innerHTML = '';
+    
+    // 创建消息头部
+    const headerDiv = document.createElement('div');
+    headerDiv.className = 'message-header';
+    
+    const titleDiv = document.createElement('div');
+    titleDiv.className = 'message-title';
+    titleDiv.textContent = msg.name;
+    
+    const descDiv = document.createElement('div');
+    descDiv.className = 'message-description';
+    descDiv.textContent = meta.displayName || meta.description || '无描述';
+    
+    headerDiv.appendChild(titleDiv);
+    headerDiv.appendChild(descDiv);
+    container.appendChild(headerDiv);
+    
+    // 创建字段容器
+    const fieldsContainer = document.createElement('div');
+    fieldsContainer.className = 'fields-container';
+    
+    // 字段组
+    const fieldGroup = document.createElement('div');
+    fieldGroup.className = 'field-group uplink';
+    
+    const groupHeader = document.createElement('div');
+    groupHeader.className = 'field-group-header';
+    
+    const groupTitle = document.createElement('div');
+    groupTitle.className = 'field-group-title';
+    groupTitle.textContent = '字段列表';
+    
+    const groupCount = document.createElement('div');
+    groupCount.className = 'field-group-count';
+    groupCount.textContent = Object.keys(meta.fields).length + ' 个字段';
+    
+    groupHeader.appendChild(groupTitle);
+    groupHeader.appendChild(groupCount);
+    fieldGroup.appendChild(groupHeader);
+    
+    // 创建字段内容容器
+    const fieldContent = document.createElement('div');
+    fieldContent.className = 'field-group-content';
+    
+    // 添加每个字段
+    Object.entries(meta.fields).forEach(([fieldName, field]) => {
+        const fieldItem = document.createElement('div');
+        fieldItem.className = 'field-item-expanded';
+        
+        // 左侧区域：字段信息
+        const leftSection = document.createElement('div');
+        leftSection.className = 'field-left-section';
+        
+        // 字段头部：名称和类型
+        const fieldHeader = document.createElement('div');
+        fieldHeader.className = 'field-header';
+        
+        const nameSpan = document.createElement('div');
+        nameSpan.className = 'field-name';
+        nameSpan.textContent = fieldName;
+        
+        const typeSpan = document.createElement('div');
+        typeSpan.className = 'field-type';
+        typeSpan.textContent = (field.repeated ? 'repeated ' : '') + field.type;
+        
+        fieldHeader.appendChild(nameSpan);
+        fieldHeader.appendChild(typeSpan);
+        leftSection.appendChild(fieldHeader);
+        
+        // 字段描述
+        if (field.description || field.comment) {
+            const commentDiv = document.createElement('div');
+            commentDiv.className = 'field-comment-expanded';
+            commentDiv.textContent = field.description || field.comment || '无说明';
+            leftSection.appendChild(commentDiv);
+        }
+        
+        // 右侧区域：接收值
+        const rightSection = document.createElement('div');
+        rightSection.className = 'field-right-section';
+        
+        const valueSection = document.createElement('div');
+        valueSection.className = 'field-value-section';
+        
+        const valueDisplay = document.createElement('div');
+        valueDisplay.className = 'field-value-display';
+        valueDisplay.id = `value-${msg.name}-${fieldName}`;
+        
+        const emptyValue = document.createElement('span');
+        emptyValue.textContent = '暂无数据';
+        emptyValue.style.color = '#94a3b8';
+        emptyValue.style.fontStyle = 'italic';
+        valueDisplay.appendChild(emptyValue);
+        
+        valueSection.appendChild(valueDisplay);
+        rightSection.appendChild(valueSection);
+        
+        fieldItem.appendChild(leftSection);
+        fieldItem.appendChild(rightSection);
+        fieldContent.appendChild(fieldItem);
+    });
+    
+    fieldGroup.appendChild(fieldContent);
+    
+    fieldsContainer.appendChild(fieldGroup);
+    container.appendChild(fieldsContainer);
+    
+    showMessageDetail('uplink');
+}
+
+function renderDownlinkMessageDetail(msg) {
+    const container = document.getElementById('downlinkMessageDetail');
+    const meta = msg.metadata;
+    
+    container.innerHTML = '';
+    
+    // 创建消息头部
+    const headerDiv = document.createElement('div');
+    headerDiv.className = 'message-header';
+    
+    const titleDiv = document.createElement('div');
+    titleDiv.className = 'message-title';
+    titleDiv.textContent = msg.name;
+    
+    const descDiv = document.createElement('div');
+    descDiv.className = 'message-description';
+    descDiv.textContent = messagesData.messageDisplayNames?.[msg.name] || meta.displayName || meta.description || '无描述';
+    
+    headerDiv.appendChild(titleDiv);
+    headerDiv.appendChild(descDiv);
+    container.appendChild(headerDiv);
+    
+    // 创建字段容器
+    const fieldsContainer = document.createElement('div');
+    fieldsContainer.className = 'fields-container';
+    
+    // 字段组
+    const fieldGroup = document.createElement('div');
+    fieldGroup.className = 'field-group downlink';
+    
+    const groupHeader = document.createElement('div');
+    groupHeader.className = 'field-group-header';
+    
+    const groupTitle = document.createElement('div');
+    groupTitle.className = 'field-group-title';
+    groupTitle.textContent = '字段配置';
+    
+    const groupCount = document.createElement('div');
+    groupCount.className = 'field-group-count';
+    groupCount.textContent = Object.keys(meta.fields).length + ' 个字段';
+    
+    groupHeader.appendChild(groupTitle);
+    groupHeader.appendChild(groupCount);
+    fieldGroup.appendChild(groupHeader);
+    
+    // 创建字段内容容器
+    const fieldContent = document.createElement('div');
+    fieldContent.className = 'field-group-content';
+    
+    // 添加每个字段
+    Object.entries(meta.fields).forEach(([fieldName, field]) => {
+        const fieldItem = document.createElement('div');
+        fieldItem.className = 'field-item-expanded';
+        
+        // 左侧区域：字段信息
+        const leftSection = document.createElement('div');
+        leftSection.className = 'field-left-section';
+        
+        // 字段头部：名称和类型
+        const fieldHeader = document.createElement('div');
+        fieldHeader.className = 'field-header';
+        
+        const nameSpan = document.createElement('div');
+        nameSpan.className = 'field-name';
+        nameSpan.textContent = fieldName;
+        
+        const typeSpan = document.createElement('div');
+        typeSpan.className = 'field-type';
+        typeSpan.textContent = (field.repeated ? 'repeated ' : '') + field.type;
+        
+        fieldHeader.appendChild(nameSpan);
+        fieldHeader.appendChild(typeSpan);
+        leftSection.appendChild(fieldHeader);
+        
+        // 字段描述
+        if (field.description || field.comment) {
+            const commentDiv = document.createElement('div');
+            commentDiv.className = 'field-comment-expanded';
+            commentDiv.textContent = field.description || field.comment || '无说明';
+            leftSection.appendChild(commentDiv);
+        }
+        
+        // 右侧区域：输入控件
+        const rightSection = document.createElement('div');
+        rightSection.className = 'field-right-section';
+        
+        const inputSection = document.createElement('div');
+        inputSection.className = 'field-value-section';
+        
+        const inputElement = createFieldInput(msg.name, fieldName, field);
+        inputSection.appendChild(inputElement);
+        rightSection.appendChild(inputSection);
+        
+        fieldItem.appendChild(leftSection);
+        fieldItem.appendChild(rightSection);
+        fieldContent.appendChild(fieldItem);
+    });
+    
+    fieldGroup.appendChild(fieldContent);
+    
+    // 添加发送按钮区域
+    const sendArea = document.createElement('div');
+    sendArea.style.marginTop = '20px';
+    sendArea.style.paddingTop = '15px';
+    sendArea.style.borderTop = '1px solid #334155';
+    
+    const controlRow = document.createElement('div');
+    controlRow.style.display = 'flex';
+    controlRow.style.gap = '15px';
+    controlRow.style.alignItems = 'center';
+    controlRow.style.flexWrap = 'wrap';
+    
+    const sendBtn = document.createElement('button');
+    sendBtn.className = 'send-message-btn';
+    sendBtn.textContent = '📤 发送此消息';
+    sendBtn.onclick = () => sendDownlinkMessage(msg.name);
+    sendBtn.style.width = 'auto';
+    sendBtn.style.padding = '8px 15px';
+    sendBtn.style.flexShrink = '0';
+    
+    const freqLabel = document.createElement('label');
+    freqLabel.className = 'form-label';
+    freqLabel.textContent = '频率(Hz)';
+    freqLabel.style.marginBottom = '0';
+    freqLabel.style.flexShrink = '0';
+    
+    const freqInput = document.createElement('input');
+    freqInput.type = 'number';
+    freqInput.className = 'form-input';
+    freqInput.id = 'autoFreq-' + msg.name;
+    freqInput.value = messagesData.messageDefaultFrequencies?.[msg.name] || 1;
+    freqInput.min = 0.1;
+    freqInput.step = 0.1;
+    freqInput.style.width = '80px';
+    freqInput.style.flexShrink = '0';
+    
+    const checkLabel = document.createElement('label');
+    checkLabel.style.display = 'flex';
+    checkLabel.style.gap = '6px';
+    checkLabel.style.alignItems = 'center';
+    checkLabel.style.fontSize = '12px';
+    checkLabel.style.color = '#e2e8f0';
+    checkLabel.style.flexShrink = '0';
+    
+    const checkBox = document.createElement('input');
+    checkBox.type = 'checkbox';
+    checkBox.id = 'autoEnable-' + msg.name;
+    checkBox.onclick = (e) => {
+        e.stopPropagation();
+        toggleAutoPublish(msg.name);
+    };
+    
+    checkLabel.appendChild(checkBox);
+    checkLabel.appendChild(document.createTextNode('自动发送'));
+    
+    controlRow.appendChild(sendBtn);
+    controlRow.appendChild(freqLabel);
+    controlRow.appendChild(freqInput);
+    controlRow.appendChild(checkLabel);
+    
+    sendArea.appendChild(controlRow);
+    
+    fieldsContainer.appendChild(fieldGroup);
+    fieldsContainer.appendChild(sendArea);
+    container.appendChild(fieldsContainer);
+    
+    showMessageDetail('downlink');
+}
+
+function createFieldInput(messageName, fieldName, fieldMeta) {
     const inputId = `input-${messageName}-${fieldName}`;
     const description = fieldMeta.description || fieldMeta.comment || '';
     
@@ -200,137 +395,136 @@ function generateFieldInput(messageName, fieldName, fieldMeta) {
     
     const statusOptions = messagesData.statusMappings?.[mappingKey];
     if (statusOptions && statusOptions.length > 0) {
-        const optionsHtml = statusOptions.map(opt => 
-            `<option value="${opt.value}">${opt.value}: ${opt.label}</option>`
-        ).join('');
+        const select = document.createElement('select');
+        select.className = 'field-input-expanded';
+        select.id = inputId;
+        select.setAttribute('data-type', fieldMeta.type);
         
-        return `
-            <div class="field-input-section" onclick="event.stopPropagation()">
-                <div class="field-input-label">✏️ 选择状态</div>
-                <select class="field-select" id="${inputId}" data-type="${fieldMeta.type}">
-                    ${optionsHtml}
-                </select>
-            </div>
-        `;
+        statusOptions.forEach(opt => {
+            const option = document.createElement('option');
+            option.value = opt.value;
+            option.textContent = `${opt.value}: ${opt.label}`;
+            select.appendChild(option);
+        });
+        
+        return select;
     }
     
     if (fieldMeta.type === 'bool') {
-        let options = '';
+        const select = document.createElement('select');
+        select.className = 'field-input-expanded';
+        select.id = inputId;
+        select.setAttribute('data-type', 'bool');
+        
+        let falseText = '抬起/否';
+        let trueText = '按下/是';
+        
         if (description.includes('false') || description.includes('true')) {
             const match = description.match(/(false|抬起|否)[^a-zA-Z]*[:：=]?([^,，)]+).*?(true|按下|是)[^a-zA-Z]*[:：=]?([^,，)]+)/i);
             if (match) {
-                const falseText = match[2]?.trim() || '抬起/否';
-                const trueText = match[4]?.trim() || '按下/是';
-                options = `
-                    <option value="false">false: ${falseText}</option>
-                    <option value="true">true: ${trueText}</option>
-                `;
-            } else {
-                options = `
-                    <option value="false">false</option>
-                    <option value="true">true</option>
-                `;
+                falseText = match[2]?.trim() || '抬起/否';
+                trueText = match[4]?.trim() || '按下/是';
             }
-        } else {
-            options = `
-                <option value="false">false</option>
-                <option value="true">true</option>
-            `;
         }
         
-        return `
-            <div class="field-input-section" onclick="event.stopPropagation()">
-                <div class="field-input-label">✏️ 设置值</div>
-                <select class="field-select" id="${inputId}" data-type="bool">
-                    ${options}
-                </select>
-            </div>
-        `;
+        const falseOption = document.createElement('option');
+        falseOption.value = 'false';
+        falseOption.textContent = `false: ${falseText}`;
+        select.appendChild(falseOption);
+        
+        const trueOption = document.createElement('option');
+        trueOption.value = 'true';
+        trueOption.textContent = `true: ${trueText}`;
+        select.appendChild(trueOption);
+        
+        return select;
     }
     
     const enumComment = fieldMeta.enumComment;
-    
     if (enumComment || (fieldMeta.type === 'uint32' && description.includes('枚举'))) {
         const enumOptions = parseEnumOptions(enumComment || description);
         if (enumOptions.length > 0) {
-            const optionsHtml = enumOptions.map(opt => 
-                `<option value="${opt.value}">${opt.value}: ${opt.label}</option>`
-            ).join('');
+            const select = document.createElement('select');
+            select.className = 'field-input-expanded';
+            select.id = inputId;
+            select.setAttribute('data-type', 'uint32');
             
-            return `
-                <div class="field-input-section" onclick="event.stopPropagation()">
-                    <div class="field-input-label">✏️ 选择值</div>
-                    <select class="field-select" id="${inputId}" data-type="uint32">
-                        ${optionsHtml}
-                    </select>
-                </div>
-            `;
+            enumOptions.forEach(opt => {
+                const option = document.createElement('option');
+                option.value = opt.value;
+                option.textContent = `${opt.value}: ${opt.label}`;
+                select.appendChild(option);
+            });
+            
+            return select;
         }
     }
     
     if (fieldMeta.repeated) {
-        return `
-            <div class="field-input-section" onclick="event.stopPropagation()">
-                <div class="field-input-label">✏️ 输入值 (数组，如: [1,2,3])</div>
-                <input type="text" class="field-input" id="${inputId}" 
-                       data-type="${fieldMeta.type}" data-repeated="true"
-                       placeholder="[1, 2, 3]" value="[]">
-            </div>
-        `;
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'field-input-expanded';
+        input.id = inputId;
+        input.setAttribute('data-type', fieldMeta.type);
+        input.setAttribute('data-repeated', 'true');
+        input.placeholder = '[1, 2, 3]';
+        input.value = '[]';
+        return input;
     }
     
     if (fieldMeta.type === 'uint32' || fieldMeta.type === 'int32') {
-        return `
-            <div class="field-input-section" onclick="event.stopPropagation()">
-                <div class="field-input-label">✏️ 输入值</div>
-                <input type="number" class="field-input" id="${inputId}" 
-                       data-type="${fieldMeta.type}"
-                       placeholder="0" value="0">
-            </div>
-        `;
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.className = 'field-input-expanded';
+        input.id = inputId;
+        input.setAttribute('data-type', fieldMeta.type);
+        input.placeholder = '0';
+        input.value = '0';
+        return input;
     }
     
     if (fieldMeta.type === 'float' || fieldMeta.type === 'double') {
-        return `
-            <div class="field-input-section" onclick="event.stopPropagation()">
-                <div class="field-input-label">✏️ 输入值</div>
-                <input type="number" step="0.01" class="field-input" id="${inputId}" 
-                       data-type="${fieldMeta.type}"
-                       placeholder="0.0" value="0.0">
-            </div>
-        `;
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.step = '0.01';
+        input.className = 'field-input-expanded';
+        input.id = inputId;
+        input.setAttribute('data-type', fieldMeta.type);
+        input.placeholder = '0.0';
+        input.value = '0.0';
+        return input;
     }
     
     if (fieldMeta.type === 'string') {
-        return `
-            <div class="field-input-section" onclick="event.stopPropagation()">
-                <div class="field-input-label">✏️ 输入值</div>
-                <input type="text" class="field-input" id="${inputId}" 
-                       data-type="string"
-                       placeholder="文本内容" value="">
-            </div>
-        `;
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'field-input-expanded';
+        input.id = inputId;
+        input.setAttribute('data-type', 'string');
+        input.placeholder = '文本内容';
+        input.value = '';
+        return input;
     }
     
     if (fieldMeta.type === 'bytes') {
-        return `
-            <div class="field-input-section" onclick="event.stopPropagation()">
-                <div class="field-input-label">✏️ 输入值 (文本或Base64)</div>
-                <input type="text" class="field-input" id="${inputId}" 
-                       data-type="bytes"
-                       placeholder="文本内容" value="">
-            </div>
-        `;
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'field-input-expanded';
+        input.id = inputId;
+        input.setAttribute('data-type', 'bytes');
+        input.placeholder = '文本内容或Base64';
+        input.value = '';
+        return input;
     }
     
-    return `
-        <div class="field-input-section" onclick="event.stopPropagation()">
-            <div class="field-input-label">✏️ 输入值</div>
-            <input type="text" class="field-input" id="${inputId}" 
-                   data-type="${fieldMeta.type}"
-                   placeholder="值" value="">
-        </div>
-    `;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'field-input-expanded';
+    input.id = inputId;
+    input.setAttribute('data-type', fieldMeta.type);
+    input.placeholder = '值';
+    input.value = '';
+    return input;
 }
 
 function parseEnumOptions(description) {
@@ -354,6 +548,7 @@ function parseEnumOptions(description) {
     return options;
 }
 
+// 以下函数保持原有功能，但需要适配新UI
 async function sendDownlinkMessage(messageType) {
     try {
         const msg = messagesData.serverMessages.find(m => m.name === messageType);
@@ -545,19 +740,6 @@ async function refreshHistory() {
     }
 }
 
-function toggleMessage(element) {
-    const wasActive = element.classList.contains('active');
-    
-    const parent = element.parentElement;
-    parent.querySelectorAll('.message-item.active').forEach(item => {
-        item.classList.remove('active');
-    });
-    
-    if (!wasActive) {
-        element.classList.add('active');
-    }
-}
-
 // 填充手动发送下拉框
 function populateManualSelect() {
     const select = document.getElementById('manualMessageType');
@@ -646,5 +828,64 @@ async function publishManual() {
     }
 }
 
+// 分页控制
+let currentPage = 1;
+let isScrolling = false;
+
+function initPageNavigation() {
+    document.addEventListener('wheel', handleWheel, { passive: false });
+    
+    // 初始化页面状态
+    updatePageVisibility();
+}
+
+function handleWheel(event) {
+    if (isScrolling) return;
+    
+    // 阻止默认滚动行为
+    event.preventDefault();
+    
+    // 检测滚动方向
+    const delta = Math.sign(event.deltaY);
+    
+    if (delta > 0 && currentPage === 1) {
+        // 向下滚动，从第一页切换到第二页
+        switchToPage(2);
+    } else if (delta < 0 && currentPage === 2) {
+        // 向上滚动，从第二页切换回第一页
+        switchToPage(1);
+    }
+}
+
+function switchToPage(pageNumber) {
+    if (isScrolling) return;
+    
+    isScrolling = true;
+    currentPage = pageNumber;
+    
+    // 更新页面可见性
+    updatePageVisibility();
+    
+    // 重置滚动锁定
+    setTimeout(() => {
+        isScrolling = false;
+    }, 500);
+}
+
+function updatePageVisibility() {
+    const page1 = document.querySelector('.page-1');
+    const page2 = document.querySelector('.page-2');
+    
+    if (currentPage === 1) {
+        page1.classList.add('active');
+        page2.classList.remove('active');
+    } else {
+        page1.classList.remove('active');
+        page2.classList.add('active');
+    }
+}
+
+// 初始化
 loadMessages();
 setInterval(refreshHistory, 2000);
+initPageNavigation();
