@@ -53,6 +53,8 @@ class HTTPHandler {
             this.handleGetMessages(res);
         } else if (url.pathname === '/api/uplink-history') {
             this.handleGetUplinkHistory(res);
+        } else if (url.pathname === '/api/uplink-latest') {
+            this.handleGetUplinkLatest(res);
         } else if (url.pathname === '/api/clear-history' && req.method === 'POST') {
             this.handleClearHistory(res);
         } else if (url.pathname === '/api/publish' && req.method === 'POST') {
@@ -108,6 +110,29 @@ class HTTPHandler {
         const history = this.mqttHandler.getReceivedMessages();
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(history));
+    }
+
+    /**
+     * 处理获取最新上行消息请求
+     * 返回每种消息类型的最新一条消息
+     */
+    handleGetUplinkLatest(res) {
+        const history = this.mqttHandler.getReceivedMessages();
+        
+        // 按消息类型分组，获取每种类型的最新消息
+        const latestByType = {};
+        history.forEach(item => {
+            if (!latestByType[item.messageType] || 
+                new Date(item.timestamp) > new Date(latestByType[item.messageType].timestamp)) {
+                latestByType[item.messageType] = item;
+            }
+        });
+        
+        // 转换为数组
+        const latestMessages = Object.values(latestByType);
+        
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(latestMessages));
     }
 
     /**

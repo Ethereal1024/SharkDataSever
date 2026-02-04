@@ -651,29 +651,154 @@ async function toggleAutoPublish(messageType) {
 }
 
 function updateUplinkReceivedData(messageType, parsedData) {
+    // 获取消息的元数据，以便知道所有字段及其类型
+    const messageMeta = messagesData?.clientMessages?.find(m => m.name === messageType)?.metadata;
+    
+    // 如果没有元数据，使用默认逻辑
+    if (!messageMeta || !messageMeta.fields) {
+        console.warn(`未找到消息 ${messageType} 的元数据，使用默认更新逻辑`);
+        updateUplinkReceivedDataFallback(messageType, parsedData);
+        return;
+    }
+    
+    // 获取所有字段的默认值
+    const fieldDefaults = {};
+    Object.entries(messageMeta.fields).forEach(([fieldName, fieldMeta]) => {
+        // 根据字段类型设置默认值
+        if (fieldMeta.type === 'bool') {
+            fieldDefaults[fieldName] = false;
+        } else if (fieldMeta.type === 'uint32' || fieldMeta.type === 'int32' || 
+                   fieldMeta.type === 'float' || fieldMeta.type === 'double') {
+            fieldDefaults[fieldName] = 0;
+        } else if (fieldMeta.type === 'string') {
+            fieldDefaults[fieldName] = '';
+        } else if (fieldMeta.type === 'bytes') {
+            fieldDefaults[fieldName] = '';
+        } else {
+            fieldDefaults[fieldName] = '';
+        }
+    });
+    
+    // 合并接收到的数据（覆盖默认值）
+    const allFieldData = { ...fieldDefaults };
     for (const [fieldName, fieldInfo] of Object.entries(parsedData)) {
-        const valueEl = document.getElementById('value-' + messageType + '-' + fieldName);
+        if (fieldInfo.value !== undefined) {
+            allFieldData[fieldName] = fieldInfo.value;
+        }
+    }
+    
+    // 更新所有字段
+    for (const [fieldName, fieldValue] of Object.entries(allFieldData)) {
+        // 用户观察到通信历史中的字段名使用的是小驼峰命名法(camelCase)
+        // 上行消息界面期望的可能是snake_case（因为Protobuf原始定义是snake_case）
+        // 我们需要将camelCase转换为snake_case
+        
+        // 将camelCase转换为snake_case
+        const snakeCaseFieldName = camelToSnake(fieldName);
+        
+        // 尝试多种可能的ID格式（优先尝试snake_case，因为上行消息界面可能使用原始Protobuf字段名）
+        const possibleIds = [
+            'value-' + messageType + '-' + snakeCaseFieldName,      // snake_case（最可能）
+            'value-' + messageType + '-' + fieldName,               // 原始camelCase
+            'value-' + messageType.toLowerCase() + '-' + snakeCaseFieldName,  // 消息类型小写 + snake_case
+            'value-' + messageType.toLowerCase() + '-' + fieldName,           // 消息类型小写 + camelCase
+            // 尝试其他可能的变体
+            'value-' + messageType + '-' + fieldName.toLowerCase(),           // 全小写
+            'value-' + messageType + '-' + fieldName.toUpperCase(),           // 全大写
+            // 尝试消息类型的不同变体
+            'value-' + messageType.toUpperCase() + '-' + snakeCaseFieldName,  // 消息类型大写 + snake_case
+            'value-' + messageType.toUpperCase() + '-' + fieldName            // 消息类型大写 + camelCase
+        ];
+        
+        let valueEl = null;
+        let foundId = null;
+        for (const id of possibleIds) {
+            valueEl = document.getElementById(id);
+            if (valueEl) {
+                foundId = id;
+                console.log(`找到元素ID: ${id} (原始字段名: ${fieldName}, 转换后: ${snakeCaseFieldName})`);
+                break;
+            }
+        }
+        
         if (valueEl) {
             valueEl.innerHTML = '';
             
+            // 只显示字段值，不显示描述和时间戳
             const valueDiv = document.createElement('div');
             valueDiv.className = 'field-value-received';
-            valueDiv.textContent = fieldInfo.display;
+            
+            // 显示字段值（包括默认值）
+            valueDiv.textContent = String(fieldValue);
             valueEl.appendChild(valueDiv);
+        } else {
+            console.warn(`未找到字段元素: ${fieldName} (camelCase), 尝试的ID: ${possibleIds.join(', ')}`);
             
-            if (fieldInfo.description) {
-                const descDiv = document.createElement('div');
-                descDiv.className = 'field-value-desc';
-                descDiv.textContent = '💡 ' + fieldInfo.description;
-                valueEl.appendChild(descDiv);
+            // 调试：输出页面上所有相关的元素ID
+            const allElements = document.querySelectorAll('[id^="value-' + messageType + '-"]');
+            if (allElements.length > 0) {
+                console.log(`页面上存在的相关元素ID:`);
+                allElements.forEach(el => console.log(`  ${el.id}`));
             }
-            
-            const timeDiv = document.createElement('div');
-            timeDiv.className = 'field-value-time';
-            timeDiv.textContent = new Date().toLocaleTimeString();
-            valueEl.appendChild(timeDiv);
         }
     }
+}
+
+// 备用更新逻辑（当没有元数据时使用）
+function updateUplinkReceivedDataFallback(messageType, parsedData) {
+    for (const [fieldName, fieldInfo] of Object.entries(parsedData)) {
+        // 将camelCase转换为snake_case
+        const snakeCaseFieldName = camelToSnake(fieldName);
+        
+        // 尝试多种可能的ID格式
+        const possibleIds = [
+            'value-' + messageType + '-' + snakeCaseFieldName,
+            'value-' + messageType + '-' + fieldName,
+            'value-' + messageType.toLowerCase() + '-' + snakeCaseFieldName,
+            'value-' + messageType.toLowerCase() + '-' + fieldName,
+            'value-' + messageType + '-' + fieldName.toLowerCase(),
+            'value-' + messageType + '-' + fieldName.toUpperCase(),
+            'value-' + messageType.toUpperCase() + '-' + snakeCaseFieldName,
+            'value-' + messageType.toUpperCase() + '-' + fieldName
+        ];
+        
+        let valueEl = null;
+        for (const id of possibleIds) {
+            valueEl = document.getElementById(id);
+            if (valueEl) {
+                console.log(`找到元素ID: ${id} (原始字段名: ${fieldName}, 转换后: ${snakeCaseFieldName})`);
+                break;
+            }
+        }
+        
+        if (valueEl) {
+            valueEl.innerHTML = '';
+            const valueDiv = document.createElement('div');
+            valueDiv.className = 'field-value-received';
+            valueDiv.textContent = fieldInfo.value !== undefined ? String(fieldInfo.value) : '';
+            valueEl.appendChild(valueDiv);
+        } else {
+            console.warn(`未找到字段元素: ${fieldName}, 尝试的ID: ${possibleIds.join(', ')}`);
+        }
+    }
+}
+
+// 辅助函数：camelCase 转 snake_case（主要转换函数）
+function camelToSnake(str) {
+    // 将camelCase转换为snake_case
+    // 例如：mouseX → mouse_x, leftButtonDown → left_button_down
+    // 注意：处理连续大写字母的情况，如 "RFID" → "rfid"
+    return str
+        .replace(/([A-Z]+)([A-Z][a-z])/g, '$1_$2')  // 处理连续大写，如 "RFIDModule" → "RFID_Module"
+        .replace(/([a-z])([A-Z])/g, '$1_$2')        // 处理小写后跟大写，如 "mouseX" → "mouse_X"
+        .toLowerCase();                             // 全部转为小写
+}
+
+// 辅助函数：snake_case 转 camelCase（备用）
+function snakeToCamel(str) {
+    // 将snake_case转换为camelCase
+    // 例如：mouse_x → mouseX, left_button_down → leftButtonDown
+    return str.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
 }
 
 async function refreshHistory() {
@@ -686,19 +811,6 @@ async function refreshHistory() {
         if (history.length === 0) {
             container.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">暂无消息</p>';
             return;
-        }
-        
-        const latestMessages = {};
-        history.forEach(item => {
-            if (!latestMessages[item.messageType]) {
-                latestMessages[item.messageType] = item;
-            }
-        });
-        
-        for (const [messageType, item] of Object.entries(latestMessages)) {
-            if (item.parsedData) {
-                updateUplinkReceivedData(messageType, item.parsedData);
-            }
         }
         
         let html = '';
@@ -738,6 +850,43 @@ async function refreshHistory() {
     } catch (error) {
         console.error('刷新历史记录失败:', error);
     }
+}
+
+// 更新上行消息界面数据（使用最新消息API）
+let lastUpdateTime = 0;
+const UPDATE_INTERVAL = 13; // 13ms ≈ 75Hz，匹配RemoteControl消息频率
+
+async function updateUplinkMessages() {
+    const now = Date.now();
+    
+    // 限制更新频率
+    if (now - lastUpdateTime < UPDATE_INTERVAL) {
+        return;
+    }
+    
+    lastUpdateTime = now;
+    
+    try {
+        const response = await fetch('/api/uplink-latest');
+        const latestMessages = await response.json();
+        
+        for (const item of latestMessages) {
+            if (item.parsedData) {
+                updateUplinkReceivedData(item.messageType, item.parsedData);
+            }
+        }
+    } catch (error) {
+        console.error('更新上行消息失败:', error);
+    }
+}
+
+// 使用requestAnimationFrame进行平滑更新
+function startUplinkMessageUpdates() {
+    function updateLoop() {
+        updateUplinkMessages();
+        requestAnimationFrame(updateLoop);
+    }
+    requestAnimationFrame(updateLoop);
 }
 
 // 填充手动发送下拉框
@@ -828,11 +977,41 @@ async function publishManual() {
     }
 }
 
+// 清除历史记录
+async function clearHistory() {
+    try {
+        const response = await fetch('/api/clear-history', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('✅ 历史记录已清除');
+            refreshHistory(); // 刷新历史面板
+        } else {
+            alert('❌ 清除失败: ' + result.error);
+        }
+    } catch (error) {
+        alert('❌ 错误: ' + error.message);
+    }
+}
+
 // 分页控制
 let currentPage = 1;
 let isScrolling = false;
 
 function initPageNavigation() {
+    // 检查页面元素是否存在
+    const page1 = document.querySelector('.page-1');
+    const page2 = document.querySelector('.page-2');
+    
+    if (!page1 || !page2) {
+        console.warn('页面导航元素未找到，跳过分页初始化');
+        return;
+    }
+    
     document.addEventListener('wheel', handleWheel, { passive: false });
     
     // 初始化页面状态
@@ -841,6 +1020,12 @@ function initPageNavigation() {
 
 function handleWheel(event) {
     if (isScrolling) return;
+    
+    // 检查页面元素是否存在
+    const page1 = document.querySelector('.page-1');
+    const page2 = document.querySelector('.page-2');
+    
+    if (!page1 || !page2) return;
     
     // 阻止默认滚动行为
     event.preventDefault();
@@ -860,6 +1045,12 @@ function handleWheel(event) {
 function switchToPage(pageNumber) {
     if (isScrolling) return;
     
+    // 检查页面元素是否存在
+    const page1 = document.querySelector('.page-1');
+    const page2 = document.querySelector('.page-2');
+    
+    if (!page1 || !page2) return;
+    
     isScrolling = true;
     currentPage = pageNumber;
     
@@ -876,6 +1067,8 @@ function updatePageVisibility() {
     const page1 = document.querySelector('.page-1');
     const page2 = document.querySelector('.page-2');
     
+    if (!page1 || !page2) return;
+    
     if (currentPage === 1) {
         page1.classList.add('active');
         page2.classList.remove('active');
@@ -888,4 +1081,5 @@ function updatePageVisibility() {
 // 初始化
 loadMessages();
 setInterval(refreshHistory, 2000);
+startUplinkMessageUpdates(); // 使用requestAnimationFrame进行75Hz更新
 initPageNavigation();
