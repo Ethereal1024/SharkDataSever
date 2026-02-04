@@ -53,6 +53,8 @@ class HTTPHandler {
             this.handleGetMessages(res);
         } else if (url.pathname === '/api/uplink-history') {
             this.handleGetUplinkHistory(res);
+        } else if (url.pathname === '/api/clear-history' && req.method === 'POST') {
+            this.handleClearHistory(res);
         } else if (url.pathname === '/api/publish' && req.method === 'POST') {
             this.handlePublish(req, res);
         } else if (url.pathname === '/api/auto-publish' && req.method === 'POST') {
@@ -106,6 +108,27 @@ class HTTPHandler {
         const history = this.mqttHandler.getReceivedMessages();
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify(history));
+    }
+
+    /**
+     * 处理清除历史请求
+     */
+    handleClearHistory(res) {
+        try {
+            this.mqttHandler.clearMessageHistory();
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ 
+                success: true,
+                message: '历史记录已清除',
+                clearedAt: new Date().toISOString()
+            }));
+        } catch (error) {
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ 
+                success: false,
+                error: error.message 
+            }));
+        }
     }
 
     /**

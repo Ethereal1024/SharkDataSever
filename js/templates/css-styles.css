@@ -55,6 +55,13 @@ h1 {
     max-height: 600px;
 }
 
+/* 通信历史面板 - 固定高度 */
+.panel.history-panel {
+    height: 400px;
+    min-height: 400px;
+    max-height: 400px;
+}
+
 .panel-header {
     background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
     color: #5cfc90;
@@ -157,7 +164,14 @@ h1 {
 }
 
 .field-group.downlink {
-    max-height: 300px;
+    max-height: 350px;
+}
+
+/* 下行消息发送按钮区域 - 紧凑布局 */
+.downlink-send-area {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #334155;
 }
 
 .field-group-header {
@@ -464,19 +478,31 @@ h1 {
 .send-message-btn {
     margin-top: 10px;
     padding: 8px 20px;
-    background: linear-gradient(135deg, #1e293b 0%, #5cfc90 100%);
+    background: #5cfc90;
     color: #0f172a;
     border: none;
     border-radius: 5px;
     font-size: 13px;
     font-weight: bold;
     cursor: pointer;
-    width: 100%;
+    flex: 1;
+    min-width: 0;
 }
 
 .send-message-btn:hover {
+    background: #4ae080;
     transform: translateY(-1px);
     box-shadow: 0 2px 6px rgba(92, 252, 144, 0.4);
+}
+
+.send-message-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 3px rgba(92, 252, 144, 0.4);
+}
+
+.send-message-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(92, 252, 144, 0.3);
 }
 
 .btn {
@@ -494,66 +520,228 @@ h1 {
     color: white;
 }
 
+.btn-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(108, 117, 125, 0.4);
+}
+
+.btn-secondary:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(108, 117, 125, 0.4);
+}
+
+.btn-secondary:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(108, 117, 125, 0.3);
+}
+
 .history-item {
     background: #1e293b;
     border-left: 4px solid #5cfc90;
-    padding: 12px 15px;
-    margin-bottom: 12px;
-    border-radius: 5px;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    border-radius: 6px;
     color: #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border: 1px solid #334155;
 }
 
 .history-header {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 8px;
+    align-items: center;
     font-size: 13px;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
 .history-type {
     font-weight: bold;
     color: #5cfc90;
+    font-size: 14px;
+}
+
+.history-client {
+    color: #94a3b8;
+    font-size: 12px;
+    background: #0f172a;
+    padding: 3px 6px;
+    border-radius: 3px;
+    border: 1px solid #334155;
 }
 
 .history-time {
     color: #94a3b8;
     font-size: 12px;
+    white-space: nowrap;
 }
 
 .history-data {
     background: #0f172a;
-    padding: 10px;
+    padding: 8px;
     border-radius: 4px;
     font-family: 'Consolas', 'Monaco', monospace;
-    font-size: 12px;
+    font-size: 13px;
     overflow-x: auto;
     color: #e2e8f0;
     border: 1px solid #334155;
 }
 
-.field-display {
-    margin-bottom: 5px;
-    padding: 5px;
+/* 紧凑型字段显示 - 横向布局 */
+.field-display-compact {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.field-item-compact {
+    display: flex;
+    align-items: center;
     background: #0f172a;
-    border-radius: 3px;
+    padding: 6px 10px;
+    border-radius: 4px;
     border: 1px solid #334155;
+    font-size: 13px;
+    min-height: 28px;
+    flex: 0 0 auto;
+}
+
+.field-name-compact {
+    font-weight: bold;
+    color: #5cfc90;
+    margin-right: 6px;
+    white-space: nowrap;
+    font-size: 13px;
+}
+
+.field-value-compact {
+    color: #5cfc90;
+    font-weight: bold;
+    white-space: nowrap;
+    font-size: 13px;
+}
+
+.field-desc-compact {
+    color: #94a3b8;
+    font-size: 11px;
+    margin-left: 6px;
+    font-style: italic;
+    white-space: nowrap;
+}
+
+/* 紧凑型字段显示 - 网格布局 */
+.field-grid-compact {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 8px;
+    margin-top: 6px;
+}
+
+.field-grid-item {
+    background: #0f172a;
+    padding: 8px 10px;
+    border-radius: 4px;
+    border: 1px solid #334155;
+    font-size: 13px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.field-grid-name {
+    font-weight: bold;
+    color: #5cfc90;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.field-grid-value {
+    color: #5cfc90;
+    font-weight: bold;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.field-grid-desc {
+    color: #94a3b8;
+    font-size: 11px;
+    font-style: italic;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 紧凑型字段显示 - 内联布局 */
+.field-inline-compact {
+    display: inline-flex;
+    align-items: center;
+    background: #0f172a;
+    padding: 5px 8px;
+    border-radius: 4px;
+    border: 1px solid #334155;
+    font-size: 13px;
+    margin-right: 6px;
+    margin-bottom: 4px;
+}
+
+.field-inline-name {
+    font-weight: bold;
+    color: #5cfc90;
+    margin-right: 4px;
+    white-space: nowrap;
+    font-size: 13px;
+}
+
+.field-inline-value {
+    color: #5cfc90;
+    font-weight: bold;
+    white-space: nowrap;
+    font-size: 13px;
+}
+
+.field-inline-desc {
+    color: #94a3b8;
+    font-size: 11px;
+    margin-left: 4px;
+    font-style: italic;
+    white-space: nowrap;
+}
+
+/* 原始字段显示样式（保持向后兼容） */
+.field-display {
+    margin-bottom: 6px;
+    padding: 6px 8px;
+    background: #0f172a;
+    border-radius: 4px;
+    border: 1px solid #334155;
+    font-size: 13px;
 }
 
 .field-display-name {
     font-weight: bold;
     color: #5cfc90;
-    margin-right: 8px;
+    margin-right: 6px;
+    font-size: 13px;
 }
 
 .field-display-value {
     color: #5cfc90;
     font-weight: bold;
+    font-size: 13px;
 }
 
 .field-display-desc {
     color: #94a3b8;
     font-size: 11px;
-    margin-top: 2px;
+    margin-top: 3px;
 }
 
 .badge {
@@ -566,13 +754,13 @@ h1 {
 }
 
 .badge-up {
-    background: #28a745;
-    color: white;
+    background: #5cfc90;
+    color: #0f172a;
 }
 
 .badge-down {
-    background: #007bff;
-    color: white;
+    background: #5cfc90;
+    color: #0f172a;
 }
 
 /* 按钮样式 */
@@ -596,6 +784,22 @@ h1 {
 .btn-danger {
     background: #dc3545;
     color: white;
+}
+
+.btn-danger:hover {
+    background: #c82333;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.4);
+}
+
+.btn-danger:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(220, 53, 69, 0.4);
+}
+
+.btn-danger:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.3);
 }
 
 .btn-group {

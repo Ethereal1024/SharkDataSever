@@ -61,10 +61,13 @@
             </div>
         </div>
         
-        <div class="panel" style="margin-top: 30px;">
+        <div class="panel history-panel" style="margin-top: 30px;">
             <div class="panel-header">
                 📜 通信历史
-                <button class="btn btn-secondary" onclick="refreshHistory()" style="margin-left: auto;">刷新</button>
+                <div style="margin-left: auto; display: flex; gap: 10px;">
+                    <button class="btn btn-secondary" onclick="refreshHistory()">刷新</button>
+                    <button class="btn btn-danger" onclick="clearHistory()">清除</button>
+                </div>
             </div>
             <div class="panel-body" id="historyPanel">
                 <p style="color: #999; text-align: center; padding: 20px;">暂无历史记录</p>
