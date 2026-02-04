@@ -8,8 +8,7 @@
     "mqtt": "node js/mqtt-server.js",
     "mqtt-visual": "node js/main.js",
     "udp": "node js/UDPserver.js",
-    "proto": "pbjs -t static-module -w commonjs -o proto/messages.js proto/messages.proto && pbts -o proto/messages.d.ts proto/messages.js",
-    "test-modular": "node js/test-modular.js"
+    "proto": "pbjs -t static-module -w commonjs -o proto/messages.js proto/messages.proto && pbts -o proto/messages.d.ts proto/messages.js"
   },
   "keywords": [
     "udp",
