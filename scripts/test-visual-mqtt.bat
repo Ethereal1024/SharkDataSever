@@ -5,7 +5,7 @@ echo    启动可视化MQTT测试客户端
 echo ========================================
 echo.
 echo 请先确保MQTT服务器已启动！
-echo 服务器启动脚本: start-visual-mqtt.bat
+echo 服务器启动脚本: start.bat 或 start-visual-mqtt-old.bat
 echo.
 echo 本客户端将：
 echo 1. 订阅所有下行消息（服务器发送）

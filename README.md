@@ -101,7 +101,8 @@ SharkDataSever/
 │
 ├── js/                        # 💻 JavaScript 源代码
 │   ├── README.md
-│   ├── mqtt-server-visual.js      # MQTT 可视化服务（主服务）
+│   ├── main.js                    # MQTT 可视化服务（主服务，模块化版本）
+│   ├── server.js                  # 服务器主类
 │   ├── mqtt-server.js             # 随机数据 MQTT 服务
 │   ├── UDPserver.js               # UDP 视频流服务（主服务）
 │   ├── udp-video-streamer.js      # UDP 服务器备用版本
@@ -130,7 +131,7 @@ SharkDataSever/
 
 | 文件 | 用途 |
 |------|------|
-| `js/mqtt-server-visual.js` | **主要服务** - 提供 MQTT 服务器 + Web 可视化界面 |
+| `js/main.js` | **主要服务** - 提供 MQTT 服务器 + Web 可视化界面（模块化版本） |
 | `js/UDPserver.js` | **UDP 服务** - 循环发送 HEVC 视频流 |
 | `docs/Protocol.md` | **协议文档** - 详细的 MQTT 消息定义和说明 |
 | `proto/messages.proto` | **协议定义** - Protobuf 消息结构源文件 |
@@ -163,7 +164,7 @@ runner.bat        # Windows
 # 或直接运行
 npm run mqtt-visual
 # 或
-node js/mqtt-server-visual.js
+node js/main.js
 ```
 
 **使用流程：**
@@ -620,7 +621,7 @@ runner.bat  # 选择 "4. 启动双服务模式"
 4. 修改频率值（单位：Hz）
 
 **方法二：修改代码**
-1. 编辑 `js/mqtt-server-visual.js`
+1. 编辑 `js/main.js`
 2. 找到 `messageDefaultFrequencies` 对象
 3. 修改对应消息的频率值
 

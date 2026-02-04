@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MQTT 服务器可视化控制台</title>
+    <style>
+        {{CSS_CONTENT}}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 MQTT 服务器可视化控制台</h1>
+            <div class="subtitle">RoboMaster 2026 自定义客户端通信协议 - 数据配置与监控</div>
+        </header>
+        
+        <div class="main-content">
+            <div class="panel">
+                <div class="panel-header">
+                    📥 上行消息（客户端 → 服务器）
+                    <span class="badge badge-up" id="uplinkCount">0</span>
+                </div>
+                <div class="panel-body" id="uplinkMessages">
+                    <p style="color: #999; text-align: center; padding: 20px;">加载中...</p>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <div class="panel-header">
+                    📤 下行消息（服务器 → 客户端）
+                    <span class="badge badge-down" id="downlinkCount">0</span>
+                </div>
+                <div class="panel-body" id="downlinkMessages">
+                    <p style="color: #999; text-align: center; padding: 20px;">加载中...</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="panel" style="margin-top: 30px;">
+            <div class="panel-header">
+                📜 通信历史
+                <button class="btn btn-secondary" onclick="refreshHistory()" style="margin-left: auto;">刷新</button>
+            </div>
+            <div class="panel-body" id="historyPanel">
+                <p style="color: #999; text-align: center; padding: 20px;">暂无历史记录</p>
+            </div>
+        </div>
+        
+        <div class="panel" style="margin-top: 30px;">
+            <div class="panel-header">
+                🧪 手动发送测试区域
+            </div>
+            <div class="panel-body">
+                <div class="form-group">
+                    <label class="form-label">选择消息类型</label>
+                    <select class="form-input" id="manualMessageType" onchange="updateManualTemplate()">
+                        <option value="">请选择消息类型</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">主题 (可选，默认使用消息类型)</label>
+                    <input type="text" class="form-input" id="manualTopic" placeholder="例如: DeployModeStatusSync">
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">消息数据 (JSON格式)</label>
+                    <textarea class="form-textarea" id="manualData" placeholder='{"status": 0}'></textarea>
+                </div>
+                
+                <button class="btn btn-primary" onclick="publishManual()" style="width: 100%;">
+                    📤 手动发送消息
+                </button>
+                
+                <div id="publishResult" style="margin-top: 15px;"></div>
+            </div>
+        </div>
+        
+        <footer style="text-align: center; padding: 20px 0 30px 0; color: #999; font-size: 12px;">
+            江南大学霞客湾校区 MeroT 制作
+        </footer>
+    </div>
+    
+    <script>
+        {{JAVASCRIPT_CONTENT}}
+    </script>
+</body>
+</html>

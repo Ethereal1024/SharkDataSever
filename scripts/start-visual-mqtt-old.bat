@@ -1,7 +1,7 @@
 @echo off
 chcp 65001 >nul
 echo ========================================
-echo    启动可视化MQTT服务器
+echo    启动可视化MQTT服务器 (新模块化版本)
 echo ========================================
 echo.
 echo MQTT服务端口: 3333
@@ -11,6 +11,6 @@ echo 按 Ctrl+C 停止服务
 echo.
 
 cd ..
-node js\mqtt-server-visual.js
+node js\main.js --mqtt-port 3333 --http-port 2026
 
 pause

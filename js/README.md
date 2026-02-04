@@ -5,10 +5,11 @@
 ## 📁 文件列表
 
 ### 🌐 主服务
-- **mqtt-server-visual.js** - MQTT 可视化服务端（主要服务）
+- **main.js** - MQTT 可视化服务端（主要服务，模块化版本）
   - MQTT 端口: 3333
   - Web 界面: http://127.0.0.1:2026
   - 功能: 提供 MQTT 消息的可视化发送和接收界面
+  - 说明: 这是重构后的模块化版本，替代了原来的 mqtt-server-visual.js
 
 ### 🚀 其他服务
 - **UDPserver.js** - UDP 视频流传输服务端（主要 UDP 服务）

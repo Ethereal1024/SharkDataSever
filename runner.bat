@@ -93,7 +93,7 @@ goto MENU
 :MQTT_VISUAL
 cls
 echo ===============================================================
-echo    [启动] MQTT 可视化服务端
+echo    [启动] MQTT 可视化服务端 (模块化版本)
 echo ===============================================================
 echo.
 echo MQTT 服务: mqtt://127.0.0.1:3333
@@ -102,7 +102,7 @@ echo.
 echo 按 Ctrl+C 停止服务
 echo ===============================================================
 echo.
-node js\mqtt-server-visual.js
+node js\main.js
 pause
 goto MENU
 
@@ -153,7 +153,7 @@ echo ===============================================================
 echo.
 pause
 
-start "MQTT可视化服务" cmd /k "echo MQTT服务: mqtt://127.0.0.1:3333 & echo Web界面: http://127.0.0.1:2026 & echo. & node js\mqtt-server-visual.js"
+start "MQTT可视化服务" cmd /k "echo MQTT服务: mqtt://127.0.0.1:3333 & echo Web界面: http://127.0.0.1:2026 & echo. & node js\main.js"
 timeout /t 2 >nul
 start "UDP视频流服务" cmd /k "echo UDP监听端口: 3334 & echo. & node js\UDPserver.js"
 
