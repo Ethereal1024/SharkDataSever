@@ -70,9 +70,20 @@ h1 {
     font-weight: bold;
     display: flex;
     align-items: center;
-    justify-content: space-between;
     border-bottom: 2px solid #5cfc90;
     flex-shrink: 0;
+    gap: 15px;
+    min-height: 60px;
+}
+
+.panel-header-title {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
 }
 
 .panel-header-controls {
@@ -88,8 +99,10 @@ h1 {
     border-radius: 5px;
     padding: 8px 12px;
     font-size: 14px;
-    min-width: 200px;
     cursor: pointer;
+    min-width: 120px;
+    max-width: 300px;
+    width: auto;
 }
 
 .message-selector:focus {
@@ -242,8 +255,9 @@ h1 {
 }
 
 .field-right-section {
-    min-width: 150px;
-    max-width: 200px;
+    width: 170px;
+    min-width: 170px;
+    max-width: 170px;
     display: flex;
     flex-direction: column;
 }
@@ -310,7 +324,12 @@ h1 {
     color: #e2e8f0;
     min-height: 32px;
     flex: 1;
+    box-sizing: border-box;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
 }
+
 
 .field-input-expanded:focus {
     outline: none;
@@ -331,6 +350,16 @@ h1 {
 .no-message-icon {
     font-size: 36px;
     margin-bottom: 10px;
+}
+
+/* Iconfont 图标样式 */
+.panel-header-title i,
+button i {
+    margin-right: 8px;
+}
+
+h1 i {
+    margin-right: 12px;
 }
 
 .no-message-text {
@@ -539,13 +568,13 @@ h1 {
 .history-item {
     background: #1e293b;
     border-left: 4px solid #5cfc90;
-    padding: 10px 12px;
-    margin-bottom: 10px;
+    padding: 8px 10px;
+    margin-bottom: 8px;
     border-radius: 6px;
     color: #e2e8f0;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
     border: 1px solid #334155;
 }
 
@@ -553,29 +582,29 @@ h1 {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 13px;
+    font-size: 14px;
     flex-wrap: wrap;
-    gap: 8px;
+    gap: 6px;
 }
 
 .history-type {
     font-weight: bold;
     color: #5cfc90;
-    font-size: 14px;
+    font-size: 15px;
 }
 
 .history-client {
     color: #94a3b8;
-    font-size: 12px;
+    font-size: 13px;
     background: #0f172a;
-    padding: 3px 6px;
+    padding: 2px 5px;
     border-radius: 3px;
     border: 1px solid #334155;
 }
 
 .history-time {
     color: #94a3b8;
-    font-size: 12px;
+    font-size: 13px;
     white-space: nowrap;
 }
 
@@ -636,20 +665,22 @@ h1 {
 /* 紧凑型字段显示 - 网格布局 */
 .field-grid-compact {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 8px;
-    margin-top: 6px;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: 5px;
+    margin-top: 5px;
 }
 
 .field-grid-item {
     background: #0f172a;
-    padding: 8px 10px;
+    padding: 5px 7px;
     border-radius: 4px;
     border: 1px solid #334155;
     font-size: 13px;
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: 2px;
+    min-height: 38px;
+    justify-content: center;
 }
 
 .field-grid-name {

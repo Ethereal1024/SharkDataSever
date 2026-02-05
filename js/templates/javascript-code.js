@@ -327,7 +327,7 @@ function renderDownlinkMessageDetail(msg) {
     
     const sendBtn = document.createElement('button');
     sendBtn.className = 'send-message-btn';
-    sendBtn.textContent = '📤 发送此消息';
+    sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i> 发送此消息';
     sendBtn.onclick = () => sendDownlinkMessage(msg.name);
     sendBtn.style.width = 'auto';
     sendBtn.style.padding = '8px 15px';
@@ -817,13 +817,14 @@ async function refreshHistory() {
         history.forEach(item => {
             let dataDisplay = '';
             if (item.parsedData && Object.keys(item.parsedData).length > 0) {
-                dataDisplay = '<div style="margin-top: 8px;">';
+                // 使用网格布局显示字段
+                dataDisplay = '<div class="field-grid-compact">';
                 for (const [fieldName, fieldInfo] of Object.entries(item.parsedData)) {
                     dataDisplay += `
-                        <div class="field-display">
-                            <span class="field-display-name">${fieldName}:</span>
-                            <span class="field-display-value">${fieldInfo.display}</span>
-                            ${fieldInfo.description ? `<div class="field-display-desc">💡 ${fieldInfo.description}</div>` : ''}
+                        <div class="field-grid-item">
+                            <div class="field-grid-name">${fieldName}</div>
+                            <div class="field-grid-value">${fieldInfo.display}</div>
+                            ${fieldInfo.description ? `<div class="field-grid-desc">💡 ${fieldInfo.description}</div>` : ''}
                         </div>
                     `;
                 }
